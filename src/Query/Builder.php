@@ -2,7 +2,7 @@
 
 namespace Watson\Rememberable\Query;
 
-use Illuminate\Support\Facades\Cache;
+use Cache;
 
 class Builder extends \Illuminate\Database\Query\Builder
 {
@@ -19,7 +19,7 @@ class Builder extends \Illuminate\Database\Query\Builder
      * @var int
      */
     protected $cacheMinutes;
-
+    protected $cacheMinutesBackup = 0;
     /**
      * The tags for the query cache.
      *
@@ -53,6 +53,10 @@ class Builder extends \Illuminate\Database\Query\Builder
             return $this->getCached($columns);
         }
 
+        //if there are multi queries such as paginate() etc. Turn cache on as there is valid cache expired time set.
+        if ($this->cacheMinutesBackup != 0) {
+            $this->cacheMinutes = $this->cacheMinutesBackup;
+        }
         return parent::get($columns);
     }
 
@@ -167,7 +171,7 @@ class Builder extends \Illuminate\Database\Query\Builder
      */
     protected function getCache()
     {
-        $cache = Cache::driver($this->cacheDriver);
+        $cache = Cache::store($this->cacheDriver);
 
         return $this->cacheTags ? $cache->tags($this->cacheTags) : $cache;
     }
